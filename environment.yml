@@ -1,0 +1,11 @@
+name: cameraai
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - opencv
+  - pip
+  - pip:
+      - torch
+      - torchvision
