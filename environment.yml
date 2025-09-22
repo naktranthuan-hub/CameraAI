@@ -1,0 +1,11 @@
+name: cameraai
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - opencv-python=4.10.0.82
+  - ultralytics
+  - mediapipe
+  - scikit-learn
+  # Add any other dependencies your project needs
