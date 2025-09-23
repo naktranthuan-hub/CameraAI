@@ -95,6 +95,29 @@ Hệ thống hỗ trợ nhiều loại nguồn video:
 
 ---
 
+## 🔧 Cài đặt môi trường
+
+### Sử dụng Conda (Khuyến nghị)
+```bash
+# Tạo môi trường từ file environment.yml
+conda env create -f environment.yml
+
+# Kích hoạt môi trường
+conda activate cameraai
+```
+
+### Các thư viện chính
+- **OpenCV 4.10.0.82**: Xử lý ảnh và video
+- **Ultralytics**: Framework YOLOv11 
+- **Streamlit**: Giao diện web dashboard
+- **MediaPipe**: Phát hiện pose và landmarks
+- **NumPy**: Tính toán số học
+- **Pillow**: Xử lý ảnh bổ sung
+
+Xem chi tiết trong file `ENVIRONMENT_SETUP.md`.
+
+---
+
 ## 🚀 Chạy ứng dụng
 ```bash
 streamlit run app.py

@@ -1,11 +1,14 @@
 name: cameraai
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - python=3.9
   - numpy
-  - opencv
+  - opencv=4.10.0.82
   - pip
+  - pillow
   - pip:
-      - torch
-      - torchvision
+      - ultralytics
+      - streamlit
+      - mediapipe
