@@ -2,7 +2,7 @@ name: cameraai
 channels:
   - defaults
 dependencies:
-  - python=3.9
+  - python=3.12
   - numpy
   - opencv
   - pip
