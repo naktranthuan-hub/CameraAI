@@ -3,9 +3,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.9
+  - python=3.12
   - numpy
-  - opencv=4.10.0.82
+  - opencv-python=4.10.0.82
   - pip
   - pillow
   - pip:
