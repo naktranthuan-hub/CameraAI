@@ -9,3 +9,4 @@ dependencies:
   - pip:
       - torch
       - torchvision
+      - opencv-python=4.10.0.82
