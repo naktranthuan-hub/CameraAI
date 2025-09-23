@@ -51,7 +51,7 @@ def render_header():
 
     with c1:
         if left_logo.exists():
-            st.image(str(left_logo), width='stretch')
+            st.image(str(left_logo),caption="Huỳnh Nguyễn Minh Quân  Lớp 11A", width='stretch')
         else:
             st.write("")
 
@@ -59,7 +59,7 @@ def render_header():
         st.markdown(
             """
             <div style="text-align:center; padding-top:6px;">
-                <h1 style="margin-bottom:4px;">Hệ thống An ninh Giám sát sử dụng thiết bị di động trong trường học</h1>
+                <h1 style="margin-bottom:4px;">Ứng dụng Học sâu trong việc xây dựng hệ thống giám sát việc sử dụng điện thoại tại lớp học theo thời gian thực</h1>
                 <div style="color:#5c6b7a; font-size:16px;">
                     Camera AI — Phát hiện CALL / VIEW / TEXT (YOLOv11 + Pose)
                 </div>
@@ -69,7 +69,7 @@ def render_header():
 
     with c3:
         if right_logo.exists():
-            st.image(str(right_logo), width='stretch')
+            st.image(str(right_logo),caption="Huỳnh Nguyễn Gia Huy  Lớp 9A4", width='stretch')
         else:
             st.write("")
 
