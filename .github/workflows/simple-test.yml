@@ -1,0 +1,46 @@
+name: CameraAI Simple Test
+
+on: 
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  test-simple:
+    runs-on: ubuntu-latest
+    
+    env:
+      OPENCV_VERSION: "4.10.0.82"
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install minimal system dependencies
+      run: |
+        sudo apt-get update
+        # Only install the most essential packages
+        sudo apt-get install -y libgl1 libglib2.0-0 libgomp1 || true
+        
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install opencv-python-headless==${{ env.OPENCV_VERSION }}
+        pip install streamlit ultralytics numpy mediapipe Pillow
+        
+    - name: Test basic imports
+      run: |
+        python -c "import streamlit; print('✅ Streamlit OK')"
+        python -c "import cv2; print(f'✅ OpenCV {cv2.__version__} OK')" 
+        python -c "import numpy; print('✅ NumPy OK')"
+        python -c "import ultralytics; print('✅ Ultralytics OK')"
+        python -c "import mediapipe; print('✅ MediaPipe OK')"
+        
+    - name: Test syntax compilation
+      run: |
+        python -m py_compile app_final.py
+        python -m py_compile app.py
+        echo "✅ All Python files compile successfully"
