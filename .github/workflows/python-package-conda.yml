@@ -61,9 +61,13 @@ jobs:
         # Uninstall any existing OpenCV packages to avoid conflicts
         pip uninstall opencv-python opencv-contrib-python opencv-python-headless -y || true
         # Cài đặt OpenCV với version cụ thể từ biến môi trường
+<<<<<<< HEAD
         pip install opencv-python==${{ env.OPENCV_PACKAGE_VERSION }}
         # Verify OpenCV package installation immediately
         pip show opencv-python | grep Version
+=======
+        pip install opencv-python==4.10.0.82
+>>>>>>> ae6191da94238492cb2872128edb241f4462d6bd
         # Cài đặt các thư viện còn lại (trừ opencv-python vì đã cài ở trên)
         pip install streamlit>=1.28.0 ultralytics>=8.0.0 numpy>=1.24.0 mediapipe>=0.10.0 Pillow>=9.5.0
         pip install pytest flake8
