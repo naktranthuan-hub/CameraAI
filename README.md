@@ -128,11 +128,26 @@ python -c "import streamlit, cv2, ultralytics, numpy, mediapipe; print('✅ All 
 
 ## 🔧 Troubleshooting
 
-### Lỗi OpenCV trên Ubuntu
-Nếu gặp lỗi `libgl1-mesa-glx` không tìm thấy:
+### Lỗi OpenCV version không khớp
+Nếu gặp lỗi version mismatch:
+
+**Vấn đề thường gặp:** OpenCV package 4.10.0.82 có thể report runtime version là 4.10.0, 4.11.0, hoặc khác tùy môi trường.
+
+**Giải pháp:**
 ```bash
-sudo apt-get update
-sudo apt-get install -y libgl1 libglib2.0-0 libgomp1
+# 1. Clean install OpenCV
+pip uninstall opencv-python opencv-contrib-python opencv-python-headless -y
+pip install opencv-python==4.10.0.82
+
+# 2. Test functionality (quan trọng hơn version number)
+python -c "
+import cv2, numpy as np
+img = np.zeros((100,100,3), dtype=np.uint8)
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+print(f'✅ OpenCV {cv2.__version__} works correctly')
+"
+
+# 3. Nếu functionality OK, version number không quan trọng
 ```
 
 ### Lỗi MediaPipe

@@ -1,3 +1,5 @@
+# CameraAI Dependencies
+# OpenCV version 4.10.0.82 (may report as 4.10.0 at runtime)
 streamlit>=1.28.0
 opencv-python==4.10.0.82
 ultralytics>=8.0.0

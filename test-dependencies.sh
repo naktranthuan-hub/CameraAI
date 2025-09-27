@@ -21,7 +21,12 @@ except ImportError as e:
 
 try:
     import cv2
-    print(f'✅ OpenCV {cv2.__version__} OK')
+    expected_version = "4.10.0"  # Runtime version that OpenCV reports
+    current_version = cv2.__version__
+    if current_version == expected_version:
+        print(f'✅ OpenCV {current_version} matches expected version')
+    else:
+        print(f'⚠️  OpenCV {current_version} (expected {expected_version}, but this might still work)')
 except ImportError as e:
     print('❌ OpenCV FAILED:', e)
 

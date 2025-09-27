@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      OPENCV_VERSION: "4.10.0.82"
+      OPENCV_PACKAGE_VERSION: "4.10.0.82"
 
     steps:
     - name: Checkout repository
@@ -28,7 +28,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install opencv-python-headless==${{ env.OPENCV_VERSION }}
+        pip install opencv-python==${{ env.OPENCV_PACKAGE_VERSION }}
         pip install streamlit ultralytics numpy mediapipe Pillow
         
     - name: Test basic imports
