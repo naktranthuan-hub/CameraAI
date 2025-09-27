@@ -58,7 +58,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         # Cài đặt OpenCV với version cụ thể từ biến môi trường
-        pip install opencv-python==${{ env.OPENCV_VERSION }}
+        pip install opencv-python==4.10.0.82
         # Cài đặt các thư viện còn lại (trừ opencv-python vì đã cài ở trên)
         pip install streamlit>=1.28.0 ultralytics>=8.0.0 numpy>=1.24.0 mediapipe>=0.10.0 Pillow>=9.5.0
         pip install pytest flake8
