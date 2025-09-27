@@ -1,34 +1,65 @@
-name: Python Package using Conda
+name: CameraAI CI/CD Pipeline
 
-on: [push]
+on: 
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build-linux:
+  build-and-test:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 5
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    env:
+      OPENCV_VERSION: "4.10.0.82"
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-    - name: Add conda to system path
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install system dependencies
       run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
-    - name: Install dependencies
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+        
+    - name: Install Python dependencies
       run: |
-        conda env update --file environment.yml --name base
+        python -m pip install --upgrade pip
+        # Cài đặt OpenCV với version cụ thể từ biến môi trường
+        pip install opencv-python==${{ env.OPENCV_VERSION }}
+        # Cài đặt các thư viện còn lại (trừ opencv-python vì đã cài ở trên)
+        pip install streamlit>=1.28.0 ultralytics>=8.0.0 numpy>=1.24.0 mediapipe>=0.10.0 Pillow>=9.5.0 pathlib2>=2.3.0
+        pip install pytest flake8
+        
     - name: Lint with flake8
       run: |
-        conda install flake8
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.venv,venv,.git,__pycache__
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=.venv,venv,.git,__pycache__
+        
+    - name: Verify OpenCV version
       run: |
-        conda install pytest
-        pytest
+        python -c "import cv2; print(f'OpenCV version: {cv2.__version__}')"
+        python -c "import cv2; assert cv2.__version__ == '${{ env.OPENCV_VERSION }}', f'Expected ${{ env.OPENCV_VERSION }}, got {cv2.__version__}'"
+        
+    - name: Test import statements
+      run: |
+        python -c "import streamlit; print('Streamlit OK')"
+        python -c "import cv2; print('OpenCV OK')" 
+        python -c "import numpy; print('NumPy OK')"
+        python -c "import ultralytics; print('Ultralytics OK')"
+        python -c "import mediapipe; print('MediaPipe OK')"
+        
+    - name: Test application syntax
+      run: |
+        python -m py_compile app_final.py
