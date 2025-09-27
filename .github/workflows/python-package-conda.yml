@@ -61,13 +61,9 @@ jobs:
         # Uninstall any existing OpenCV packages to avoid conflicts
         pip uninstall opencv-python opencv-contrib-python opencv-python-headless -y || true
         # Cài đặt OpenCV với version cụ thể từ biến môi trường
-<<<<<<< HEAD
         pip install opencv-python==${{ env.OPENCV_PACKAGE_VERSION }}
         # Verify OpenCV package installation immediately
         pip show opencv-python | grep Version
-=======
-        pip install opencv-python==4.10.0.82
->>>>>>> ae6191da94238492cb2872128edb241f4462d6bd
         # Cài đặt các thư viện còn lại (trừ opencv-python vì đã cài ở trên)
         pip install streamlit>=1.28.0 ultralytics>=8.0.0 numpy>=1.24.0 mediapipe>=0.10.0 Pillow>=9.5.0
         pip install pytest flake8
@@ -86,9 +82,9 @@ jobs:
         # Show OpenCV runtime version
         python -c "import cv2; print(f'OpenCV version: {cv2.__version__}')"
         # Test basic functionality (most important)
-        python -c "import cv2; import numpy as np; img = np.zeros((100, 100, 3), dtype=np.uint8); gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY); print('✅ OpenCV basic operations work')"
+        python -c "import cv2; import numpy as np; img = np.zeros((100, 100, 3), dtype=np.uint8); gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY); print('OpenCV basic operations work')"
         # Accept any 4.x version as long as functionality works
-        python -c "import cv2; version = cv2.__version__; assert version.startswith('4.'), f'Expected OpenCV 4.x, got {version}'; print(f'✅ OpenCV {version} is acceptable')"
+        python -c "import cv2; version = cv2.__version__; assert version.startswith('4.'), f'Expected OpenCV 4.x, got {version}'; print(f'OpenCV {version} is acceptable')"
         
     - name: Test import statements
       run: |
