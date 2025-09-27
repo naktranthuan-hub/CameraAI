@@ -51,7 +51,7 @@ def render_header():
 
     with c1:
         if left_logo.exists():
-            st.image(str(left_logo),caption="Huỳnh Nguyễn Minh Quân  Lớp 11A", width='stretch')
+            st.image(str(left_logo),caption="Huỳnh Nguyễn Minh Quân 11B5", width='stretch')
         else:
             st.write("")
 
