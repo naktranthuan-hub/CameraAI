@@ -34,15 +34,24 @@ except ImportError as e:
 
 # WebRTC imports
 try:
-    from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
+    from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, RTCConfiguration
     import av
     WEBRTC_AVAILABLE = True
-    # STUN servers for WebRTC connection
+    # STUN servers for WebRTC connection - Enhanced for cloud deployment
     RTC_CONFIGURATION = RTCConfiguration(
-        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+        {
+            "iceServers": [
+                {"urls": ["stun:stun.l.google.com:19302"]},
+                {"urls": ["stun:stun1.l.google.com:19302"]},
+                {"urls": ["stun:stun2.l.google.com:19302"]},
+                {"urls": ["stun:stun3.l.google.com:19302"]},
+                {"urls": ["stun:stun4.l.google.com:19302"]}
+            ]
+        }
     )
 except ImportError:
-    WEBRTC_AVAILABLE = False
+    WEBRTC_AVAILABLE = True
+    RTC_CONFIGURATION = None
     RTC_CONFIGURATION = None
     st.warning("⚠️ WebRTC not available. Install with: pip install streamlit-webrtc av")
 
@@ -117,8 +126,8 @@ def load_model():
 # Load model only if YOLO is available
 model = load_model() if YOLO_AVAILABLE else None
 
-# ================== WebRTC Video Transformer ==================
-class VideoTransformer(VideoTransformerBase):
+# ================== WebRTC Video Processor (Updated API) ==================
+class VideoProcessor(VideoProcessorBase):
     def __init__(self):
         self.model = load_model() if YOLO_AVAILABLE else None
         self.conf_threshold = 0.30
@@ -126,9 +135,11 @@ class VideoTransformer(VideoTransformerBase):
         self.last_detection_time = 0
         self.detection_cooldown = 2.0  # seconds
         
-    def transform(self, frame):
+    def recv(self, frame):
         if not CV2_AVAILABLE or not YOLO_AVAILABLE or self.model is None:
             # Return original frame if dependencies not available
+            img = frame.to_ndarray(format="bgr24")
+            return av.VideoFrame.from_ndarray(img, format="bgr24")
             img = frame.to_ndarray(format="bgr24")
             return av.VideoFrame.from_ndarray(img, format="bgr24")
             
@@ -191,7 +202,7 @@ class VideoTransformer(VideoTransformerBase):
             st.error(f"Failed to save violation: {e}")
 
 # Global transformer instance
-video_transformer = VideoTransformer() if WEBRTC_AVAILABLE else None
+video_processor = VideoProcessor() if WEBRTC_AVAILABLE else None
 
 # ================== Session State ==================
 def ss_init():
@@ -617,15 +628,15 @@ with st.sidebar:
         webrtc_conf = st.slider("YOLO Confidence (WebRTC)", 0.10, 0.90, 0.30, 0.05, key="webrtc_conf")
         webrtc_mode = st.selectbox("Chế độ WebRTC", ["Mode A: CALL/VIEW/TEXT", "Mode B: Chỉ phát hiện phone"], key="webrtc_mode")
         
-        # Create transformer instance
-        video_transformer = VideoTransformer()
-        video_transformer.conf_threshold = webrtc_conf
-        video_transformer.mode = 0 if webrtc_mode.startswith("Mode A") else 1
+        # Create video processor instance
+        video_processor = VideoProcessor()
+        video_processor.conf_threshold = webrtc_conf
+        video_processor.mode = 0 if webrtc_mode.startswith("Mode A") else 1
         
-        # WebRTC streamer
+        # WebRTC streamer with modern API
         webrtc_ctx = webrtc_streamer(
             key="phone-detection",
-            video_transformer_factory=lambda: video_transformer,
+            video_processor_factory=lambda: video_processor,
             rtc_configuration=RTC_CONFIGURATION,
             media_stream_constraints={
                 "video": {
@@ -638,7 +649,7 @@ with st.sidebar:
             async_processing=True,
         )
         
-        if webrtc_ctx.video_transformer:
+        if webrtc_ctx.video_processor:
             st.success("✅ WebRTC đang hoạt động!")
         else:
             st.warning("⚠️ Nhấn 'Start' để bắt đầu camera điện thoại")
