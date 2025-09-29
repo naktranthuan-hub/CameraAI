@@ -13,24 +13,38 @@ from datetime import datetime
 from pathlib import Path
 from collections import Counter, deque
 
-import cv2
-import numpy as np
+# Critical imports with error handling for cloud deployment
+try:
+    import cv2
+    import numpy as np
+    CV2_AVAILABLE = True
+except ImportError as e:
+    st.error(f"OpenCV import error: {e}")
+    st.error("Please check NumPy and OpenCV compatibility in requirements.txt")
+    CV2_AVAILABLE = False
+
 import streamlit as st
-from ultralytics import YOLO
+
+try:
+    from ultralytics import YOLO
+    YOLO_AVAILABLE = True
+except ImportError as e:
+    st.error(f"YOLO import error: {e}")
+    YOLO_AVAILABLE = False
 
 # WebRTC imports
 try:
     from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
     import av
     WEBRTC_AVAILABLE = True
+    # STUN servers for WebRTC connection
+    RTC_CONFIGURATION = RTCConfiguration(
+        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    )
 except ImportError:
     WEBRTC_AVAILABLE = False
-    st.error("⚠️ streamlit-webrtc not installed. Install with: pip install streamlit-webrtc av")
-
-# STUN servers for WebRTC connection
-RTC_CONFIGURATION = RTCConfiguration(
-    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-)
+    RTC_CONFIGURATION = None
+    st.warning("⚠️ WebRTC not available. Install with: pip install streamlit-webrtc av")
 
 # ---------------- RERUN helper (compat) ----------------
 def _rerun():
@@ -91,66 +105,90 @@ render_header()
 
 @st.cache_resource
 def load_model():
-    return YOLO("yolo11n.pt")  # nhẹ, chạy CPU ổn
-model = load_model()
+    if not YOLO_AVAILABLE:
+        st.error("❌ YOLO not available - cannot load model")
+        return None
+    try:
+        return YOLO("yolo11n.pt")  # nhẹ, chạy CPU ổn
+    except Exception as e:
+        st.error(f"❌ Failed to load YOLO model: {e}")
+        return None
+
+# Load model only if YOLO is available
+model = load_model() if YOLO_AVAILABLE else None
 
 # ================== WebRTC Video Transformer ==================
 class VideoTransformer(VideoTransformerBase):
     def __init__(self):
-        self.model = load_model()
+        self.model = load_model() if YOLO_AVAILABLE else None
         self.conf_threshold = 0.30
         self.mode = 0  # 0: Mode A (CALL/VIEW/TEXT), 1: Mode B (phone detection only)
         self.last_detection_time = 0
         self.detection_cooldown = 2.0  # seconds
         
     def transform(self, frame):
+        if not CV2_AVAILABLE or not YOLO_AVAILABLE or self.model is None:
+            # Return original frame if dependencies not available
+            img = frame.to_ndarray(format="bgr24")
+            return av.VideoFrame.from_ndarray(img, format="bgr24")
+            
         img = frame.to_ndarray(format="bgr24")
         
-        # Run YOLO detection
-        results = self.model.predict(
-            source=img,
-            conf=self.conf_threshold,
-            iou=0.50,
-            imgsz=640,
-            verbose=False
-        )[0]
-        
-        # Get phone detections
-        phone_detections = []
-        for box in results.boxes or []:
-            if int(box.cls[0]) == 67:  # cell phone class in COCO
-                phone_detections.append(box)
-        
-        # Draw results
-        annotated_frame = results.plot()
-        
-        # Check for violations and save if needed
-        current_time = time.time()
-        if phone_detections and (current_time - self.last_detection_time) > self.detection_cooldown:
-            self.save_violation(annotated_frame)
-            self.last_detection_time = current_time
+        try:
+            # Run YOLO detection
+            results = self.model.predict(
+                source=img,
+                conf=self.conf_threshold,
+                iou=0.50,
+                imgsz=640,
+                verbose=False
+            )[0]
             
-        return annotated_frame
+            # Get phone detections
+            phone_detections = []
+            for box in results.boxes or []:
+                if int(box.cls[0]) == 67:  # cell phone class in COCO
+                    phone_detections.append(box)
+            
+            # Draw results
+            annotated_frame = results.plot()
+            
+            # Check for violations and save if needed
+            current_time = time.time()
+            if phone_detections and (current_time - self.last_detection_time) > self.detection_cooldown:
+                self.save_violation(annotated_frame)
+                self.last_detection_time = current_time
+                
+            return av.VideoFrame.from_ndarray(annotated_frame, format="bgr24")
+        except Exception as e:
+            # If detection fails, return original frame
+            return av.VideoFrame.from_ndarray(img, format="bgr24")
     
     def save_violation(self, frame):
         """Save violation image and log to CSV"""
+        if not CV2_AVAILABLE:
+            return
+            
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"webrtc_violation_{timestamp}.jpg"
         filepath = OUTPUT_DIR / filename
         
-        # Save image
-        cv2.imwrite(str(filepath), frame)
-        
-        # Log to CSV
-        ensure_csv_header_if_needed()
-        with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                datetime.now().isoformat(),
-                "WebRTC_Stream", 
-                str(filepath),
-                "PHONE_DETECTED"
-            ])
+        try:
+            # Save image
+            cv2.imwrite(str(filepath), frame)
+            
+            # Log to CSV
+            ensure_csv_header_if_needed()
+            with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    datetime.now().isoformat(),
+                    "WebRTC_Stream", 
+                    str(filepath),
+                    "PHONE_DETECTED"
+                ])
+        except Exception as e:
+            st.error(f"Failed to save violation: {e}")
 
 # Global transformer instance
 video_transformer = VideoTransformer() if WEBRTC_AVAILABLE else None
@@ -572,17 +610,17 @@ with st.sidebar:
     st.divider()
     st.subheader("📱 Camera điện thoại (WebRTC)")
     
-    if WEBRTC_AVAILABLE:
+    if WEBRTC_AVAILABLE and CV2_AVAILABLE and YOLO_AVAILABLE:
         st.info("💡 Sử dụng camera điện thoại của bạn để giám sát real-time")
         
         # WebRTC settings
         webrtc_conf = st.slider("YOLO Confidence (WebRTC)", 0.10, 0.90, 0.30, 0.05, key="webrtc_conf")
         webrtc_mode = st.selectbox("Chế độ WebRTC", ["Mode A: CALL/VIEW/TEXT", "Mode B: Chỉ phát hiện phone"], key="webrtc_mode")
         
-        # Update transformer settings
-        if video_transformer:
-            video_transformer.conf_threshold = webrtc_conf
-            video_transformer.mode = 0 if webrtc_mode.startswith("Mode A") else 1
+        # Create transformer instance
+        video_transformer = VideoTransformer()
+        video_transformer.conf_threshold = webrtc_conf
+        video_transformer.mode = 0 if webrtc_mode.startswith("Mode A") else 1
         
         # WebRTC streamer
         webrtc_ctx = webrtc_streamer(
@@ -605,9 +643,15 @@ with st.sidebar:
         else:
             st.warning("⚠️ Nhấn 'Start' để bắt đầu camera điện thoại")
             
-    else:
+    elif not WEBRTC_AVAILABLE:
         st.error("❌ WebRTC không khả dụng")
         st.code("pip install streamlit-webrtc av", language="bash")
+    elif not CV2_AVAILABLE:
+        st.error("❌ OpenCV không khả dụng - cần thiết cho WebRTC")
+        st.info("Kiểm tra lỗi import OpenCV ở đầu page")
+    elif not YOLO_AVAILABLE:
+        st.error("❌ YOLO không khả dụng - cần thiết cho detection")
+        st.info("Kiểm tra lỗi import YOLO ở đầu page")
 
 # ================== Main Grid: Cards per Camera ==================
 cams = st.session_state.cams
